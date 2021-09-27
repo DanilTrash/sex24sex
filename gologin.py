@@ -4,6 +4,8 @@ import os
 import stat
 import sys
 import shutil
+from random import choice
+
 import requests
 import zipfile
 import subprocess
@@ -27,8 +29,9 @@ class GoLogin(object):
         print('executablePath', self.executablePath)
         if self.extra_params:
             print('extra_params', self.extra_params)
-        self.setProfileId(options.get('profile_id')) 
-
+        self.setProfileId(options.get('profile_id'))
+        self.system_os = choice(['android', 'lin', 'mac', 'win'])
+        # self.system_os = 'android'
 
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
@@ -37,7 +40,6 @@ class GoLogin(object):
         self.profile_path = os.path.join(self.tmpdir, 'gologin_'+self.profile_id)
         self.profile_zip_path = os.path.join(self.tmpdir, 'gologin_'+self.profile_id+'.zip')
         self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_'+self.profile_id+'_upload.zip')
-
 
     def spawnBrowser(self):
         proxy = self.proxy
@@ -123,7 +125,6 @@ class GoLogin(object):
 
         print('commit profile complete')
 
-
     def sanitizeProfile(self):
         remove_dirs = [
             'Default/Cache',
@@ -159,7 +160,6 @@ class GoLogin(object):
         else:
             return proxy.get('mode', 'http')+'://'+proxy.get('username','')+':'+proxy.get('password')+'@'+proxy.get('host','')+':'+str(proxy.get('port',80))
 
-
     def getTimeZone(self):
         proxy = self.proxy
         if proxy:            
@@ -168,7 +168,6 @@ class GoLogin(object):
         else:
             data = requests.get('https://time.gologin.app')
         return json.loads(data.content.decode('utf-8'))
-
 
     def getProfile(self, profile_id=None):
         profile = self.profile_id if profile_id==None else profile_id
@@ -209,7 +208,6 @@ class GoLogin(object):
             self.createEmptyProfile()   
             self.extractProfileZip()
 
-
     def createEmptyProfile(self):
         print('createEmptyProfile')
         empty_profile = '../gologin_zeroprofile.zip'
@@ -221,7 +219,6 @@ class GoLogin(object):
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.profile_path)       
         os.remove(self.profile_zip_path)
-
 
     def getGeolocationParams(self, profileGeolocationParams, tzGeolocationParams):
         if profileGeolocationParams.get('fillBasedOnIp'):
@@ -238,7 +235,6 @@ class GoLogin(object):
           'longitude': profileGeolocationParams['longitude'],
           'accuracy': profileGeolocationParams['accuracy'],
         }
-
 
     def convertPreferences(self, preferences):
         resolution = preferences.get('resolution', '1920x1080')
@@ -296,7 +292,6 @@ class GoLogin(object):
 
         return preferences
 
-
     def updatePreferences(self):
         pref_file = os.path.join(self.profile_path, 'Default/Preferences')
         pfile = open(pref_file, 'r')
@@ -304,7 +299,7 @@ class GoLogin(object):
         pfile.close()  
         profile = self.profile
         proxy = self.profile.get('proxy')
-        # print('proxy=', proxy)
+        print('proxy=', proxy)
         if proxy and (proxy.get('mode')=='gologin' or proxy.get('mode')=='tor'):
             autoProxyServer = profile.get('autoProxyServer')
             splittedAutoProxyServer = autoProxyServer.split('://')
@@ -350,16 +345,14 @@ class GoLogin(object):
         self.updatePreferences()
         return self.profile_path
 
-
     def headers(self):
         return {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
 
-
     def getRandomFingerprint(self, options):
-        os_type = options.get('os', 'lin')
+        os_type = options.get('os', self.system_os)
         return json.loads(requests.get(API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers()).content.decode('utf-8'))
 
     def profiles(self):
@@ -371,8 +364,8 @@ class GoLogin(object):
           "name": "default_name",
           "notes": "auto generated",
           "browserType": "chrome",
-          "os": "lin",
-          "startUrl": "google.com",
+          "os": self.system_os,
+          "startUrl": "http://1sex24sex.com",
           "googleServicesEnabled": True,
           "lockEnabled": False,
           "audioContext": {
@@ -394,10 +387,10 @@ class GoLogin(object):
           "profile": json.dumps(profile_options),
         }
     
-        if profile.get('navigator'):
-          profile['navigator']['resolution'] = "1024x768"
-        else:
-          profile['navigator'] = {'resolution': "1024x768"}
+        # if profile.get('navigator'):
+        #   profile['navigator']['resolution'] = "1024x768"
+        # else:
+        #   profile['navigator'] = {'resolution': "1024x768"}
         
         for k,v in options.items():
             profile[k] = v
@@ -405,11 +398,9 @@ class GoLogin(object):
         response = json.loads(requests.post(API_URL + '/browser/', headers=self.headers(), json=profile).content.decode('utf-8'))
         return response.get('id')
 
-
     def delete(self, profile_id=None):
         profile = self.profile_id if profile_id==None else profile_id
         requests.delete(API_URL + '/browser/' + profile, headers=self.headers())
-
 
     def update(self, options):
         self.profile_id = options.get('id')
@@ -422,7 +413,7 @@ class GoLogin(object):
         url = 'https://' + self.profile_id + '.orbita.gologin.com/json/version'
         wsUrl = ''
         try_number = 1
-        while wsUrl=='':
+        while wsUrl == '':
             time.sleep(delay_s)
             try:
                 response = json.loads(requests.get(url).content)
