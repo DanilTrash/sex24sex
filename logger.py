@@ -1,7 +1,7 @@
 import logging
 
 
-def logger(name, mode='w'):
+def logger(name, mode='a'):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     console_handler = logging.StreamHandler()
